@@ -1,7 +1,7 @@
 Fit linear models in Futhark with a robustness towards ill-conditioned problems.
 Model parameters are estimated by solving the linear least squares
 equations based on a pivoting QR-decomposition.
-It is well suited for small, numerically instable problems.
+It is well suited for small, numerically unstable problems.
 
 This package seeks to match the output of `lm` in the R language.
 Therefore, the QR-decomposition and parts of the least squares solver
