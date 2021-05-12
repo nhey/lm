@@ -6,7 +6,7 @@
 -- and high accuracy is needed.
 
 module lm_f64 = {
-  import "lib/github.com/diku-dk/linalg/linalg"
+  import "../../diku-dk/linalg/linalg"
   import "linpack"
 
   module T = f64
