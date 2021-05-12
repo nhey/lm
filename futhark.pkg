@@ -1,0 +1,5 @@
+package github.com/nhey/lm
+
+require {
+  github.com/diku-dk/linalg 0.4.1 #a703fcc481819b47b172e1adf2d9878c6208757d
+}
