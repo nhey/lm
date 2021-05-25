@@ -55,28 +55,29 @@ module lm_f64 = {
     let frobenius_norm_sq A = flatten A |> \x -> linalg.dotprod x x
     in T.sqrt <| (frobenius_norm_sq R) T.* (frobenius_norm_sq Rinv)
 
-  -- Extract lower triangular matrix by zeroing above main diagonal.
+  -- Extract lower triangular matrix by setting values above
+  -- main diagonal to NAN. Main diagonal is determined by
+  -- the rank.
   -- If fed output from `dqrdc2`, it will extract transposed `R`
   -- from `QR`, seing as `dqrdc2` output itself is transposed.
-  let lower_triangular [m][n] (L: [m][n]real): [m][n]real =
-    map2 (\i -> map2 (\j x -> if j > i then (T.i64 0) else x) (iota n))
-         (iota m) L
+  let lower_triangular_nan [m][n] (rank: i64) (L: [m][n]real): [m][n]real =
+    map2 (\j ->
+            map2 (\i ele -> if i+1 > rank || j+1 > rank
+                            then T.nan
+                            else ele
+                 ) (iota n)
+         ) (iota m) L
 
   type results [p] = { params: [p]real, cov_params: [p][p]real, rank: i64 }
 
   let fit [n][p] (X': [p][n]real) (y: [n]real): results [p] =
     let (A', pivot, qraux, rank) = linpack.dqrdc2 (copy X') 1e-7
-    -- The shared dimension of `Q` and `R` is `k = min(n,p)`.
-    -- However fitting a linear regression with `p` parameters
-    -- requires at least `p` datapoints, so we always have
-    -- `n >= p`. Moreover the rank of the `X` should be at least
-    -- `p`. If not, parameters must be dropped accordingly.
-    -- Consequently `k = rank <= p <= n`.
-    let R = transpose (lower_triangular A'[:p,:p]) -- k x k
-    -- TODO Filling with nan values is maybe not the most sane way
-    --      to regularize this; will have to re-evaluate this at some point.
-    let R = map (map2 (\i r -> if i+1 > rank then T.nan else r) (iota p)) R
-    let R = map2 (\i r -> if i+1 > rank then replicate p T.nan else r) (iota p) R
+    -- The shared dimension of `Q` and `R` is `k = min(n,p,r)`
+    -- where `r` is the rank of `X`. Fitting a linear regression
+    -- with `p` parameters requires at least `p` datapoints, so
+    -- we always have `n >= p`. Moreover the rank of `X` is at
+    -- most `p`. Thus it is always the case that `k = r`.
+    let R = transpose (lower_triangular_nan rank A'[:p,:p]) -- k x k
     let (cov_params, Rinv) = chol2inv R
     -- Find least squares solution to `Xb = y`. Substituting
     -- `X = QR` into the LLS equations `X^T X b = X^T y`, we get
