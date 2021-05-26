@@ -100,5 +100,6 @@ module lm_f64 = {
                                 pivot_2d (cov_params |> flatten :> [pp]real)
     -- Set padding values equal to zero.
     let cov_params = map (map (\x -> if T.isnan x then 0 else x)) cov_params
+    let beta = map (\x -> if T.isnan x then 0 else x) beta
     in { params = beta, cov_params = cov_params, rank = rank }
 }
